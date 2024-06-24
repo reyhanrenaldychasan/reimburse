@@ -91,7 +91,7 @@
                         @if (!isset($item->isOvertime))
                             Rp15.000
                         @else
-                            Rp52.000
+                            Rp61.000
                         @endif
                     </div>
                     <div>

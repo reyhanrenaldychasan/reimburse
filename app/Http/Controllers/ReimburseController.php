@@ -267,12 +267,12 @@ class ReimburseController extends Controller
                 foreach ($dataTransports as $k => $v) {
                     if($v->date != $value) continue;
                     
-                    $v->amount1 = "Rp 82.000";
+                    $v->amount1 = "Rp 91.000";
                     $v->amount2 = "Rp 14.000";
 
                 }
                 
-                $dataTotal += 88000;
+                $dataTotal += 97000;
             }
         }
 

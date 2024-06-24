@@ -63,13 +63,13 @@
         @forelse ($lunchs as $key => $item)
             @include('reimburse.lunch', ['item' => $item])
             <br>
-            @if (($key + 1) % 2 == 0)
+            @if (($key + 1) % 2 == 0 && ($key + 1) != count($lunchs))
                 <div class="pagebreak"> </div>
             @endif
         @empty
         @endforelse
 
-        <div class="pagebreak"> </div>
+        <div class="pagebreak"></div>
 
         @if ($dinners)
             <div>Makan Lembur</div>
