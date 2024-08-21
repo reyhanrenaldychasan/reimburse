@@ -33,7 +33,7 @@
             Waktu
         </div>
         <div class="col text-end">
-            <b>{{ $item->lunchTime }}</b>
+            <b>{{ $item->time }}</b>
         </div>
     </div>
     <div class="row">
@@ -41,7 +41,7 @@
             Tanggal
         </div>
         <div class="col text-end">
-            <b>{{ $item->lunchDate }}</b>
+            <b>{{ $item->dateDesc }}</b>
         </div>
     </div>
     <div class="row">
@@ -49,7 +49,7 @@
             ID Transaksi
         </div>
         <div class="col text-end">
-            <b>{{ $item->lunchNo }} <img src="{{ asset('img/logo_copy.png') }}" style="width: 25px"
+            <b>{{ $item->no }} <img src="{{ asset('img/logo_copy.png') }}" style="width: 25px"
                     alt=""></b>
         </div>
     </div>
@@ -59,7 +59,7 @@
             Jumlah tagihan
         </div>
         <div class="col text-end">
-            <b>40000</b>
+            <b>{{ $item->amount }}</b>
         </div>
     </div>
     <div class="lunch-border"></div>
@@ -68,7 +68,7 @@
             <b>Total pembayaran</b>
         </div>
         <div class="col text-end" style="font-size: 18px">
-            <b>Rp40.000</b>
+            <b>{{ number_format($item->amount, 0, ',', '.') }}</b>
         </div>
     </div>
 </div>

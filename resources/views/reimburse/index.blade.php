@@ -86,80 +86,79 @@
             @php
                 $no = 1;
             @endphp
-            @foreach ($dataTransports as $key => $item)
+            @foreach ($reimburses->transports as $key => $item)
                 <tr>
                     <td>{{ $no }}</td>
                     <td>{{ $item->date }}</td>
-                    <td>{{ $item->desc1 }}</td>
-                    <td>{{ $item->amount1 }}</td>
+                    <td>{{ $item->tableDesc }}</td>
+                    <td>Rp {{ number_format($item->amount,0,',','.') }}</td>
                 </tr>
-                @php
-                    $no++;
-                @endphp
+            @endforeach
+            @foreach ($reimburses->parkings as $item)
                 <tr>
                     <td>{{ $no }}</td>
                     <td>{{ $item->date }}</td>
-                    <td>{{ $item->desc2 }}</td>
-                    <td>{{ $item->amount2 }}</td>
+                    <td>{{ $item->tableDesc }}</td>
+                    <td>Rp {{ number_format($item->amount,0,',','.') }}</td>
                 </tr>
                 @php
                     $no++;
                 @endphp
             @endforeach
-            @foreach ($reimburses as $item)
+            @foreach ($reimburses->lunchs as $item)
                 <tr>
                     <td>{{ $no }}</td>
                     <td>{{ $item->date }}</td>
-                    <td>{{ $item->lunchDesc }}</td>
-                    <td>{{ $item->lunchAmount }}</td>
+                    <td>{{ $item->tableDesc }}</td>
+                    <td>Rp {{ number_format($item->amount,0,',','.') }}</td>
                 </tr>
                 @php
                     $no++;
                 @endphp
             @endforeach
-            @foreach ($dinners as $item)
-            <tr>
-                <td>{{ $no }}</td>
-                <td>{{ $item->fullDate }}</td>
-                <td>{{ $item->desc }}</td>
-                <td>{{ $item->amount }}</td>
-            </tr>
-            @php
-                $no++;
-            @endphp
+            @foreach ($reimburses->dinners as $item)
+                <tr>
+                    <td>{{ $no }}</td>
+                    <td>{{ $item->date }}</td>
+                    <td>{{ $item->tableDesc }}</td>
+                    <td>Rp {{ number_format($item->amount,0,',','.') }}</td>
+                </tr>
+                @php
+                    $no++;
+                @endphp
             @endforeach
             <tr>
                 <td colspan="3" class="text-end">Total</td>
-                <td>{{ $dataTotal }}</td>
+                <td>Rp {{ number_format($reimburses->totalAmount,0,',','.') }}</td>
             </tr>
         </table>
     </div>
     <div class="row">
         <div class="col">
             <div style="width: 840px">
-                @forelse ($gorides as $item)
-                    @include('reimburse.gojek', ['item' => $item])
+                @forelse ($reimburses->transports as $item)
+                    @include('reimburse.transport', ['item' => $item])
                     <hr>
                 @empty
                 @endforelse
             </div>
             <div style="width: 840px">
-                @forelse ($mrts as $item)
-                    @include('reimburse.mrt', ['item' => $item])
+                @forelse ($reimburses->parkings as $item)
+                    @include('reimburse.parking', ['item' => $item])
                     <hr>
                 @empty
                 @endforelse
             </div>
         </div>
         <div class="col">
-            @forelse ($reimburses as $item)
-                @include('reimburse.lunch', ['item' => $item])
+            @forelse ($reimburses->lunchs as $item)
+                @include('reimburse.gofood', ['item' => $item])
                 <hr>
             @empty
             @endforelse
 
-            @forelse ($dinners as $item)
-                @include('reimburse.dinner', ['item' => $item])
+            @forelse ($reimburses->dinners as $item)
+                @include('reimburse.gofood', ['item' => $item])
                 <hr>
             @empty
             @endforelse

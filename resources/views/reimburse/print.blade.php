@@ -31,12 +31,14 @@
 
 @section('content')
     <div>
-        <div>Gojek</div>
+        <div>Transport</div>
         <div style="width: 840px">
-            @forelse ($gorides as $key => $item)
-                @include('reimburse.gojek', ['item' => $item])
+            @forelse ($reimburses->transports as $key => $item)
+                @include('reimburse.transport', ['item' => $item])
                 <br>
-                @if (($key + 1) % 3 == 0)
+                <br>
+                <br>
+                @if (($key + 1) % 2 == 0)
                     <div class="pagebreak"> </div>
                 @endif
             @empty
@@ -45,12 +47,12 @@
 
         <div class="pagebreak"> </div>
 
-        <div>MRT</div>
+        <div>Parkir</div>
         <div style="width: 740px">
-            @forelse ($mrts as $key => $item)
-                @include('reimburse.mrt', ['item' => $item])
+            @forelse ($reimburses->parkings as $key => $item)
+                @include('reimburse.parking', ['item' => $item])
                 <br>
-                @if (($key + 1) % 9 == 0)
+                @if (($key + 1) % 5 == 0)
                     <div class="pagebreak"> </div>
                 @endif
             @empty
@@ -60,10 +62,10 @@
         <div class="pagebreak"> </div>
 
         <div>Makan Siang</div>
-        @forelse ($lunchs as $key => $item)
-            @include('reimburse.lunch', ['item' => $item])
+        @forelse ($reimburses->lunchs as $key => $item)
+            @include('reimburse.gofood', ['item' => $item])
             <br>
-            @if (($key + 1) % 2 == 0 && ($key + 1) != count($lunchs))
+            @if (($key + 1) % 2 == 0 && ($key + 1) != count($reimburses->lunchs))
                 <div class="pagebreak"> </div>
             @endif
         @empty
@@ -71,10 +73,10 @@
 
         <div class="pagebreak"></div>
 
-        @if ($dinners)
+        @if ($reimburses->dinners)
             <div>Makan Lembur</div>
-            @forelse ($dinners as $key => $item)
-                @include('reimburse.dinner', ['item' => $item])
+            @forelse ($reimburses->dinners as $key => $item)
+                @include('reimburse.gofood', ['item' => $item])
                 <br>
                 @if (($key + 1) % 2 == 0)
                     <div class="pagebreak"> </div>

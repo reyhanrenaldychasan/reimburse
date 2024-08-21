@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use stdClass;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Barryvdh\Snappy\Facades\SnappyPdf;
 
 class ReimburseController extends Controller
 {
@@ -41,11 +39,7 @@ class ReimburseController extends Controller
         if ($request->exclude_dates) $variables['excludeDates'] = $data['exclude_dates'];
         if ($request->overtime_dates) $variables['overtimeDates'] = $data['overtime_dates'];
 
-        $reimburse = $this->getReimburse($request);
-
-        foreach ($reimburse as $key => $value) {
-            $variables[$key] = $value;
-        }
+        $variables['reimburses'] = $this->getReimburse($request);
 
         if(isset($data['motor']))
            return view('reimburse.index_motor', $variables);
@@ -83,7 +77,183 @@ class ReimburseController extends Controller
             }
         }
 
-        $reimburses = [];
+        $reimburses = new stdClass;
+        $reimburses->totalAmount = 0;
+        $reimburses->transports = collect([]);
+        $reimburses->parkings = collect([]);
+        $reimburses->lunchs = collect([]);
+        $reimburses->dinners = collect([]);
+
+        $lunchCost = env('LUNCH_COST', 40000);
+        $gasCost = env('GAS_COST', 15000);
+        $gasCostPerLiter = env("GAS_LITER_COST");
+        $parkingCost = env('PARKING_COST', 2000);
+        $dinnerCost = env('DINNER_COST', 40000);
+
+        foreach ($dates as $key => $value) {
+
+            $day = date_create_from_format('Y-m-d', $value)->format('N'); // get numeric representation of day (1 for Monday, 7 for Sunday)
+
+            if($day == 6 || $day == 7 ) continue;
+            
+            // populating transport
+            $transport = new stdClass;
+
+            $transport->date = $value;
+            $transport->dateDesc = date_create_from_format('Y-m-d', $value)->format('d/m/Y');
+            $transport->time = "09:" . rand(20, 30);
+            $transport->no = rand(2000, 2700);
+            $transport->amount = $gasCost;
+            $transport->costPerLiter = $gasCostPerLiter;
+            $transport->tableDesc = "Transport";
+
+            $reimburses->transports->push($transport);
+            // end populating transport
+
+            // populating parking
+            $parking = new stdClass;
+
+            $str = "";
+            for ($i = 0; $i < 5; $i++) {
+                $str .= rand(0, 9);
+            }
+            $parking->no = "4" . $str;
+            $date = date_create_from_format('Y-m-d', $value);
+            $month = $this->months[$date->format('n')];
+            $parking->date = $value;
+            $parking->dateStart = $value;
+            $parking->dateEnd = $value;
+            $parking->dateStartDesc = $date->format("d ") . $month . $date->format(' Y');
+            $parking->dateEndDesc = $date->format("d ") . $month . $date->format(' Y');
+            $parking->startTime = $this->randomTime(9,9,40,59);
+            $parking->endTime = $this->randomTime(17,17,0,59);
+            $parking->amount = $parkingCost*8;
+            $parking->tableDesc = "Parkir";
+
+            $reimburses->parkings->push($parking);
+            // end populating parking
+
+            // populating lunch
+            $lunch = new stdClass;
+
+            $lunch->time = $this->randomTime(12,13,0,59) . " PM";
+
+            $lunch->date = $value;
+            $lunch->dateDesc = date_create_from_format('Y-m-d', $value)->format('d M, Y');
+
+            $str = "";
+            for ($i = 0; $i < 10; $i++) {
+                $str .= rand(0, 3);
+            }
+
+            $lunch->no = "02202" . $str . "..";
+
+            $lunch->desc = "Makan Siang";
+            $lunch->amount = $lunchCost;
+            $lunch->tableDesc = "Makan Siang";
+
+            $reimburses->lunchs->push($lunch);
+            // end populating lunch
+
+            $reimburses->totalAmount += ($gasCost) + ($parkingCost*8) + $lunchCost;
+        }
+
+        if ($request->overtime_dates) {
+            foreach ($request->overtime_dates as $key => $value) {
+
+                $dinner = new stdClass();
+                $str = "";
+                for ($i = 0; $i < 10; $i++) {
+                    $str .= rand(0, 3);
+                }
+
+                $dinner->dinnerNo = "02202" . $str . "..";
+
+                $str = "";
+                $str2 = "";
+                $str .= rand(6, 7);
+                if ($str == 6) {
+                    $str2 = rand(45, 59);
+                } else {
+                    $str2 = rand(0, 10);
+                    $str2 = str_pad($str2, 2, '0', STR_PAD_LEFT);
+                }
+                $str = str_pad($str, 2, '0', STR_PAD_LEFT);
+                $dinner->dinnerTime = $str . ":" . $str2 . " PM";
+
+                $dinner->dinnerDate = date_create_from_format('Y-m-d', $value)->format('d M, Y');
+                $dinner->fullDate = $value;
+                $dinner->desc = "Makan Lembur";
+                $dinner->amount = $dinnerCost;
+                $dinner->tableDesc = "Makan Lembur";
+
+                $reimburses->dinners->push($dinner);
+
+                // updating parking cost for overtimes
+                foreach ($reimburses->parkings as $key => $parking) {
+                    if($parking->date != $value) continue;
+
+                    $reimburses->parkings[$key]->endTime = $this->randomTime(0,1,0,59);
+                    $reimburses->parkings[$key]->amountDesc = "Rp".number_format($parking->amount*15, 0, ',', '.');
+                    $date = date_create_from_format("Y-m-d", $parking->dateStart);
+                    $reimburses->parkings[$key]->dateEnd = $date->modify("+1 days")->format("Y-m-d");
+                    $reimburses->parkings[$key]->dateEndDesc = $date->format("d ") . $this->months[$date->format('n')] . $date->format(' Y');
+                }
+
+                $reimburses->dataTotal -= $parkingCost*8;
+                $reimburses->dataTotal += $parkingCost*15;
+            }
+        }
+
+        return $reimburses;
+    }
+
+    public function print(Request $request)
+    {
+        $data = $request->all();
+
+        $variables['reimburses'] = $this->getReimburse($request);
+
+        return view('reimburse.print', $variables);
+    }
+
+    public function randomTime(int $hourFrom, int $hourTo, int $minuteFrom, int $minuteTo)
+    {
+        $hour = rand($hourFrom, $hourTo);
+        $hour = $this->padLeft($hour);
+
+        $minute = rand($minuteFrom, $minuteTo);
+        $minute = $this->padLeft($minute);
+
+        return "$hour:$minute";
+    }
+
+    public function padLeft($str)
+    {
+        if ($str >= 0 && $str <= 9) return str_pad($str, 2, '0', STR_PAD_LEFT);
+        else return $str;
+    }
+
+    public function getReimburseMrt($request)
+    {
+        $dates = $this->date_range($request->from_date, $request->to_date);
+
+        if ($request->exclude_dates) {
+            foreach ($dates as $key => $value) {
+                foreach ($request->exclude_dates as $k => $v) {
+                    if ($value != $v) continue;
+                    unset($dates[$key]);
+                    break;
+                }
+            }
+        }
+
+        $reimburses = new StdClass;
+        $reimburses->dataTransports = [];
+        $reimburses->dataParkings = [];
+        $reimburses->dataLunchs = [];
+        $reimburses->dataDinners = [];
+        $reimburses->dataTotal = 0;
         $overtimes = [];
         $gorides = [];
         $mrts = [];
@@ -97,49 +267,56 @@ class ReimburseController extends Controller
             $day = date_create_from_format('Y-m-d', $value)->format('N'); // get numeric representation of day (1 for Monday, 7 for Sunday)
 
             if($day == 6 || $day == 7 ) continue;
+            
+            $lunchCost = env('LUNCH_COST', 40000);
+            $gasCost = env('GAS_COST', 15000);
+            $parkingCost = env('parkingCost', 16000);
 
-            $data = new stdClass();
-            $data->gasDate = date_create_from_format('Y-m-d', $value)->format('d/m/Y');
-            $data->gasTime = "09:" . rand(20, 30);
-            $data->gasNo = rand(2000, 2700);
+            $transport = new stdClass;
+
+            $transport->gasDate = date_create_from_format('Y-m-d', $value)->format('d/m/Y');
+            $transport->gasTime = "09:" . rand(20, 30);
+            $transport->gasNo = rand(2000, 2700);
+            $transport->gasCost = $gasCost;
+
+            $parking = new stdClass;
 
             $str = "";
             for ($i = 0; $i < 5; $i++) {
                 $str .= rand(0, 9);
             }
-            $data->parkingNo = "4" . $str;
+            $parking->parkingNo = "4" . $str;
             $date = date_create_from_format('Y-m-d', $value);
             $month = $this->months[$date->format('n')];
-            $data->parkingDate = $date->format("d ") . $month . $date->format(' Y');
-            $data->parkingStartTime = "09:" . rand(40, 59);
+            $parking->parkingDate = $date->format("d ") . $month . $date->format(' Y');
+            $parking->parkingStartTime = "09:" . rand(40, 59);
 
             $str = "";
             $str .= rand(0, 59);
             if ($str >= 0 && $str <= 9) $str = str_pad($str, 2, '0', STR_PAD_LEFT);
-            $data->parkingEndTime = "17:" . $str;
+            $parking->parkingEndTime = "17:" . $str;
+            $parking->parkingCost = "Rp".$parkingCost;
+
+            $lunch = new stdClass;
 
             $str = "";
             $str2 = "";
             $str .= rand(0, 59);
             if ($str >= 0 && $str <= 9) $str = str_pad($str, 2, '0', STR_PAD_LEFT);
             $str2 .= rand(12, 13);
-            $data->lunchTime = $str2 . ":" . $str . " PM";
+            $lunch->lunchTime = $str2 . ":" . $str . " PM";
 
-            $data->lunchDate = date_create_from_format('Y-m-d', $value)->format('d M, Y');
+            $lunch->lunchDate = date_create_from_format('Y-m-d', $value)->format('d M, Y');
 
             $str = "";
             for ($i = 0; $i < 10; $i++) {
                 $str .= rand(0, 3);
             }
 
-            $data->lunchNo = "02202" . $str . "..";
+            $lunch->lunchNo = "02202" . $str . "..";
 
-            $data->lunchDesc = "Makan Siang";
-            $data->lunchAmount = "Rp 40.000";
-
-            $data->date = $value;
-
-            $data->parkingCost = "Rp16.000";
+            $lunch->lunchDesc = "Makan Siang";
+            $lunch->lunchAmount = "Rp 40.000";
 
             $goride = new stdClass();
 
@@ -197,27 +374,36 @@ class ReimburseController extends Controller
             $sec = $this->padLeft(rand(0,59));
             $mrt->endTime = "$time:$sec";
 
+
+            // populating data for table
+
             $dataTransport = new stdClass();
 
             $dataTransport->date = $value;
-            $dataTransport->desc1 = "Transport Gojek";
-            $dataTransport->desc2 = "Transport MRT";
-            $dataTransport->amount1 = "Rp 60.000";
-            $dataTransport->amount2 = "Rp 28.000";
+            $dataTransport->desc = "Transport";
+            $dataTransport->amount = "Rp " . number_format($gasCost, 0, ',', '.');
 
+            array_push($reimburses->dataTransports, $dataTransport);
+
+            $dataParking = new stdClass();
+
+            $dataParking->date = $value;
+            $dataParking->desc = "Parkir";
+            $dataParking->amount = "Rp " . number_format($parkingCost, 0, ',', '.');
+
+            array_push($reimburses->dataParkings, $dataParking);
+            
             $dataLunch = new stdClass();
-
+            
             $dataLunch->date = $value;
             $dataLunch->desc = "Makan Siang";
-            $dataLunch->amount = "Rp 40.000";
+            $dataLunch->amount = "Rp " . number_format($lunchCost, 0, ',', '.');
+            
+            array_push($reimburses->dataLunchs, $dataLunch);
 
-            $dataTotal += 128000;
+            $dataTotal += ($gasCost) + ($parkingCost) + $lunchCost;
 
-            array_push($reimburses, $data);
-            array_push($gorides, $goride);
-            array_push($mrts, $mrt);
-            array_push($dataTransports, $dataTransport);
-            array_push($dataLunchs, $dataLunch);
+            // end populating data for table
         }
 
         if ($request->overtime_dates) {
@@ -267,12 +453,13 @@ class ReimburseController extends Controller
                 foreach ($dataTransports as $k => $v) {
                     if($v->date != $value) continue;
                     
-                    $v->amount1 = "Rp 91.000";
-                    $v->amount2 = "Rp 14.000";
+                    $gojekTransportWithOvertime = env('GOJEK_COST', 15000) + env('GOJEK_OVERTIME_COST');
+                    $v->amount1 = "Rp " . number_format($gojekTransportWithOvertime, 0, ',', '.');
+                    $v->amount2 = "Rp " . number_format(env('MRT_COST'), 0, ',', '.');
 
                 }
                 
-                $dataTotal += 97000;
+                $dataTotal += env('GOJEK_OVERTIME_COST') + env('DINNER_COST') - env('GOJEK_COST') + env('MRT_COST');
             }
         }
 
@@ -282,39 +469,8 @@ class ReimburseController extends Controller
             'gorides' => $gorides,
             'mrts' => $mrts,
             'dinners' => $dinners,
-            'dataTransports' => $dataTransports,
+            'dataTransports' => collect($dataTransports),
             'dataTotal' => number_format($dataTotal, 0, ',', '.'),
         ];
-    }
-
-    public function print(Request $request)
-    {
-        $data = $request->all();
-
-        $reimburse = $this->getReimburse($request);
-
-        $variables['gorides'] = $reimburse['gorides'];
-        $variables['mrts'] = $reimburse['mrts'];
-        $variables['lunchs'] = $reimburse['reimburses'];
-        $variables['dinners'] = $reimburse['dinners'];
-
-        return view('reimburse.print', $variables);
-    }
-
-    public function randomTime($hourFrom, $hourTo, $minuteFrom, $minuteTo)
-    {
-        $hour = rand($hourFrom, $hourTo);
-        $hour = $this->padLeft($hour);
-
-        $minute = rand($minuteFrom, $minuteTo);
-        $minute = $this->padLeft($minute);
-
-        return "$hour:$minute";
-    }
-
-    public function padLeft($str)
-    {
-        if ($str >= 0 && $str <= 9) return str_pad($str, 2, '0', STR_PAD_LEFT);
-        else return $str;
     }
 }

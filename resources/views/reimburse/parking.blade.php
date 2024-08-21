@@ -21,7 +21,7 @@
         </div>
         <div class="col-4">
             <div>
-                : {{ $item->parkingNo }}
+                : {{ $item->no }}
             </div>
         </div>
     </div>
@@ -33,7 +33,7 @@
             Tarif
         </div>
         <div class="col-4">
-            : <b>{{ $item->parkingCost }}</b>
+            : <b>Rp{{ number_format($item->amount, 0, ',', '.') }}</b>
         </div>
     </div>
     <div class="mt-min-6 fs-13">
@@ -44,10 +44,10 @@
             Waktu Tiba
         </div>
         <div class="col-6">
-            : {{ $item->parkingDate }}
+            : {{ $item->dateStartDesc }}
         </div>
         <div class="col-2">
-            {{ $item->parkingStartTime }}
+            {{ $item->startTime }}
         </div>
     </div>
     <div class="row mt-min-6 fs-13">
@@ -55,10 +55,10 @@
             Berlaku Sampai
         </div>
         <div class="col-6">
-            : {{ $item->parkingDate }}
+            : {{ $item->dateEndDesc }}
         </div>
         <div class="col-2">
-            {{ $item->parkingEndTime }}
+            {{ $item->endTime }}
         </div>
     </div>
     <br>
