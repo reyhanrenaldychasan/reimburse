@@ -125,8 +125,8 @@ class ReimburseController extends Controller
             $parking->dateEnd = $value;
             $parking->dateStartDesc = $date->format("d ") . $month . $date->format(' Y');
             $parking->dateEndDesc = $date->format("d ") . $month . $date->format(' Y');
-            $parking->startTime = $this->randomTime(9,9,40,59);
-            $parking->endTime = $this->randomTime(17,17,0,59);
+            $parking->startTime = $this->randomTime(9,9,40,59) . ":" . $this->padLeft(rand(0,59));
+            $parking->endTime = $this->randomTime(17,17,0,59) . ":" . $this->padLeft(rand(0,59));
             $parking->amount = $parkingCost*8;
             $parking->tableDesc = "Parkir";
 
@@ -210,8 +210,6 @@ class ReimburseController extends Controller
 
     public function print(Request $request)
     {
-        $data = $request->all();
-
         $variables['reimburses'] = $this->getReimburse($request);
 
         return view('reimburse.print', $variables);

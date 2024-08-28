@@ -93,6 +93,9 @@
                     <td>{{ $item->tableDesc }}</td>
                     <td>Rp {{ number_format($item->amount,0,',','.') }}</td>
                 </tr>
+                @php
+                    $no++;
+                @endphp
             @endforeach
             @foreach ($reimburses->parkings as $item)
                 <tr>
