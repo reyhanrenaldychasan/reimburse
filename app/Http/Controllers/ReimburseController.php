@@ -167,7 +167,7 @@ class ReimburseController extends Controller
                     $str .= rand(0, 3);
                 }
 
-                $dinner->dinnerNo = "02202" . $str . "..";
+                $dinner->no = "02202" . $str . "..";
 
                 $str = "";
                 $str2 = "";
@@ -181,7 +181,9 @@ class ReimburseController extends Controller
                 $str = str_pad($str, 2, '0', STR_PAD_LEFT);
                 $dinner->dinnerTime = $str . ":" . $str2 . " PM";
 
-                $dinner->dinnerDate = date_create_from_format('Y-m-d', $value)->format('d M, Y');
+                $dinner->date = $value;
+                $dinner->dateDesc = date_create_from_format('Y-m-d', $value)->format('d M, Y');
+                $dinner->time = $this->randomTime(20,21,0,59) . " PM";
                 $dinner->fullDate = $value;
                 $dinner->desc = "Makan Lembur";
                 $dinner->amount = $dinnerCost;
@@ -189,19 +191,7 @@ class ReimburseController extends Controller
 
                 $reimburses->dinners->push($dinner);
 
-                // updating parking cost for overtimes
-                foreach ($reimburses->parkings as $key => $parking) {
-                    if($parking->date != $value) continue;
-
-                    $reimburses->parkings[$key]->endTime = $this->randomTime(0,1,0,59);
-                    $reimburses->parkings[$key]->amountDesc = "Rp".number_format($parking->amount*15, 0, ',', '.');
-                    $date = date_create_from_format("Y-m-d", $parking->dateStart);
-                    $reimburses->parkings[$key]->dateEnd = $date->modify("+1 days")->format("Y-m-d");
-                    $reimburses->parkings[$key]->dateEndDesc = $date->format("d ") . $this->months[$date->format('n')] . $date->format(' Y');
-                }
-
-                $reimburses->dataTotal -= $parkingCost*8;
-                $reimburses->dataTotal += $parkingCost*15;
+                $reimburses->totalAmount += $dinnerCost;
             }
         }
 
